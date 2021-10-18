@@ -1,7 +1,6 @@
 
 # Stupid-RAT
 
-Learning C#
 This is the outcome of some staff that i have learned while preparing for the ElearnSecurity PTX exam
 
 
