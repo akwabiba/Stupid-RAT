@@ -10,7 +10,7 @@ This is the outcome of some staff that i have learned while doing the ElearnSecu
     and exit when it finishes.
 ## Persist.cs 
 
-    this will create a shortcut in the startup folder to execute the Loader.cs every time the 
+    if it is not already persisted. this will create a shortcut in the startup folder to execute the loader
     
 ## Injector.cs
     
