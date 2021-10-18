@@ -1,7 +1,7 @@
 
 # Stupid-RAT
 
-This is the outcome of some staff that i have learned while preparing for the ElearnSecurity PTX exam
+This is the outcome of some staff that i have learned while doing the ElearnSecurity PTX course
 
 
 ## Loader.cs
