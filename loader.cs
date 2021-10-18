@@ -48,4 +48,3 @@ public class ikiik
 		Environment.Exit(0);
 	}
 }
-
